@@ -17,7 +17,7 @@ async def run():
             print("Connected to drone!")
             break
 
-    ## Get the absolute mean above sea level of the current location
+    ## Get the absolute above mean sea level of the current location
     print("Fetching amsl altitude at home location")
     async for terrain_info in drone.telemetry.home():
         absolute_altitude = terrain_info.absolute_altitude_m
@@ -33,7 +33,7 @@ async def run():
     print("Taking off")
     await drone.action.set_takeoff_altitude(40)
     await drone.action.takeoff()
-    await asyncio.sleep(30)
+    await asyncio.sleep(30) # pause for 30s
 
 
     # Read from csv file to go to a certain location
@@ -51,7 +51,7 @@ async def run():
     for i in rows:
         print(float(i[0]), float(i[1]), float(i[2]))
         await drone.action.goto_location(float(i[0]), float(i[1]),absolute_altitude + float(i[2]),0) # lat, lon, alt, yaw, yaw degree set to 0 as of now
-        await asyncio.sleep(40)
+        await asyncio.sleep(40) # pause to allow current goto location to finish
 
 
     ## Continue connection
