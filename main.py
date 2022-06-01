@@ -17,13 +17,6 @@ async def run():
             print("Connected to drone!")
             break
 
-    ## mandantory(?) GPS check
-    print("Waiting for drone to have a global position estimate")
-    async for health in drone.telemetry.health():
-        if health.is_global_position_ok and health.is_home_position_ok:
-            print("Global position state is good enough for flying.")
-            break
-
     ## Get the absolute mean above sea level of the current location
     print("Fetching amsl altitude at home location")
     async for terrain_info in drone.telemetry.home():
@@ -65,7 +58,7 @@ async def run():
     while True:
         print("Staying connected, press Ctrl-C to exit")
         await asyncio.sleep(30)
-        
+
 
 ## make sure all the code runs before completion
 if __name__ == "__main__":
