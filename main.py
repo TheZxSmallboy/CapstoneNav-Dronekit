@@ -10,7 +10,7 @@ async def run():
     drone = System()
     await drone.connect()
 
-    ## check connection
+    ## check connection before continuing
     print("Waiting for drone to connect")
     async for state in drone.core.connection_state():
         if state.is_connected:
@@ -21,7 +21,7 @@ async def run():
     print("Waiting for drone to have a global position estimate")
     async for health in drone.telemetry.health():
         if health.is_global_position_ok and health.is_home_position_ok:
-            print("-- Global position state is good enough for flying.")
+            print("Global position state is good enough for flying.")
             break
 
     ## Get the absolute mean above sea level of the current location
@@ -44,8 +44,7 @@ async def run():
 
 
     # Read from csv file to go to a certain location
-    file = open('coordinates.csv')
-    type(file)
+    file = open('longer_coordinates.csv')
     csvreader = csv.reader(file)
     header = []
     header = next(csvreader)
@@ -59,7 +58,7 @@ async def run():
     for i in rows:
         print(float(i[0]), float(i[1]), float(i[2]))
         await drone.action.goto_location(float(i[0]), float(i[1]),absolute_altitude + float(i[2]),0) # lat, lon, alt, yaw, yaw degree set to 0 as of now
-        await asyncio.sleep(20)
+        await asyncio.sleep(40)
 
 
     ## Continue connection
