@@ -65,8 +65,9 @@ async def run():
     while True:
         print("Staying connected, press Ctrl-C to exit")
         await asyncio.sleep(30)
+        
 
-
+## make sure all the code runs before completion
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run())
