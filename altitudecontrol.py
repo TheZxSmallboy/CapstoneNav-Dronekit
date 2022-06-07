@@ -2,17 +2,19 @@
 
 import asyncio
 from mavsdk import System
-from mavsdk.offboard import PositionNedYaw, OffboardError
+from mavsdk.offboard import OffboardError, PositionGlobalYaw
 import csv
 
 
-
+current_lat = 0.0
+current_long = 0.0
 
 async def main():
     ## Connect to the system
+
     drone = System()
     await drone.connect()
-
+    await drone.offboard.set_position_global(PositionGlobalYaw(44, 44, 55,0, altitude_type=PositionGlobalYaw.AltitudeType.REL_HOME))
     ## check connection before continuing
     print("Waiting for drone to connect")
     async for state in drone.core.connection_state():
@@ -30,29 +32,32 @@ async def main():
     asyncio.ensure_future(run(drone, absolute_altitude))
     asyncio.ensure_future(altitudeCorrection(drone))
 
-    # while True:
-    #     f2 = loop.create_task(altitudeCorrection(drone, absolute_altitude))
-    #     f1 = loop.create_task(run(drone, absolute_altitude))
-    #     await asyncio.wait([f2, f1])
-
-
+# Altitude correction code
 async def altitudeCorrection(drone):
     print("Start altitude correction code")
     async for position in drone.telemetry.position():
-        print("Current Altitude is: "+ str(position.relative_altitude_m))
-        # await asyncio.sleep(10)       
-            # if position.absolute_altitude_m - absolute_altitude> 60:
-            #     print("-- Setting initial setpoint")
-            #     await drone.offboard.set_position_ned(PositionNedYaw(0.0, 0.0, 0.0, 0.0))
-            #     print("-- Starting offboard")
-            #     try:
-            #         await drone.offboard.start()
-            #     except OffboardError as error:
-            #         print(f"Starting offboard mode failed with error code: {error._result.result}")
-            #         print("-- Disarming")
-            #         await drone.action.disarm()
-            #         return
-            #     await drone.offboard.set_position_ned(PositionNedYaw(0.0,0.0,-5.0,0.0))
+        await drone.telemetry.set_rate_position(0.2) # lower the update rate to 5seconds per update
+        # print the values in the current part of the flight
+        # print("Current Altitude is: "+ str(position.relative_altitude_m))
+        # print("Current coordinates is: "+ str(position.latitude_deg), str(position.longitude_deg))
+        global current_lat 
+        current_lat = position.latitude_deg
+        global current_long
+        current_long = position.longitude_deg
+        # When 60m is exceeded, start offboard mode and update the values it should be 
+        if position.relative_altitude_m >= 60:
+            print("-- Setting initial setpoint")
+            await drone.offboard.set_position_global(PositionGlobalYaw(position.latitude_deg, position.longitude_deg, 55,0, altitude_type=PositionGlobalYaw.AltitudeType.REL_HOME))
+            print("-- Starting offboard")
+            try:
+                await drone.offboard.start()
+            except OffboardError as error:
+                print(f"Starting offboard mode failed with error code: {error._result.result}")
+                print("-- Disarming")
+                await drone.action.disarm()
+                return
+        
+
 
 
 async def run(drone, absolute_altitude):
@@ -81,9 +86,20 @@ async def run(drone, absolute_altitude):
     await asyncio.sleep(10)
     
     for i in rows:
-        print(float(i[0]), float(i[1]), float(i[2]))
+        print("Waypoint added", float(i[0]), float(i[1]), float(i[2]))
         await drone.action.goto_location(float(i[0]), float(i[1]),absolute_altitude + float(i[2]),0) # lat, lon, alt, yaw, yaw degree set to 0 as of now
-        await asyncio.sleep(40) # pause to allow current goto location to finish
+        global current_lat
+        global current_long
+        lat = round(current_lat,5)
+        long = round(current_long,5)
+        print("Current lat is", lat, "Current Long is", long)
+        while True:
+            if (float(i[0]==round(current_lat,5)) and (float(i[1]==round(current_long,5)))):
+                print("Reached here")
+                break
+            await drone.action.goto_location(float(i[0]), float(i[1]),absolute_altitude + float(i[2]),0) # lat, lon, alt, yaw, yaw degree set to 0 as of now
+            await asyncio.sleep(20)
+        continue
 
 
     ## Continue connection
