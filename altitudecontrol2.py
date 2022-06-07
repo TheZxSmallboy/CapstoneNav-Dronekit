@@ -2,7 +2,7 @@
 
 import asyncio
 from mavsdk import System
-from mavsdk.offboard import PositionNedYaw, OffboardError, PositionGlobalYaw
+from mavsdk.offboard import OffboardError, PositionGlobalYaw
 import csv
 
 
@@ -30,16 +30,16 @@ async def main():
     asyncio.ensure_future(run(drone, absolute_altitude))
     asyncio.ensure_future(altitudeCorrection(drone))
 
-
+# Altitude correction code
 async def altitudeCorrection(drone):
     print("Start altitude correction code")
     async for position in drone.telemetry.position():
-        await drone.telemetry.set_rate_position(0.2)
-        
+        await drone.telemetry.set_rate_position(0.2) # lower the update rate to 5seconds per update
+        # print the values in the current part of the flight
         print("Current Altitude is: "+ str(position.relative_altitude_m))
         print("CUrrent coordinates is: "+ str(position.latitude_deg), str(position.longitude_deg))
-        
-        # await asyncio.sleep(10)       
+
+        # When 60m is exceeded, start offboard mode and update the values it should be 
         if position.relative_altitude_m >= 60:
             print("-- Setting initial setpoint")
             await drone.offboard.set_position_global(PositionGlobalYaw(position.latitude_deg, position.longitude_deg, 55,0, altitude_type=PositionGlobalYaw.AltitudeType.REL_HOME))
@@ -51,7 +51,6 @@ async def altitudeCorrection(drone):
                 print("-- Disarming")
                 await drone.action.disarm()
                 return
-            # await drone.offboard.set_position_ned(PositionNedYaw(0.0,0.0,-5.0,0.0))
         
 
 
