@@ -40,6 +40,7 @@ async def altitudeCorrection(drone):
         # print the values in the current part of the flight
         print("Current Altitude is: "+ str(position.relative_altitude_m))
         print("Current coordinates is: "+ str(position.latitude_deg), str(position.longitude_deg))
+        # set global variables
         global current_lat 
         current_lat = position.latitude_deg
         global current_long
@@ -88,6 +89,8 @@ async def run(drone, absolute_altitude):
     for i in rows:
         print("Waypoint added", float(i[0]), float(i[1]), float(i[2]))
         await drone.action.goto_location(float(i[0]), float(i[1]),absolute_altitude + float(i[2]),0) # lat, lon, alt, yaw, yaw degree set to 0 as of now
+
+        # get the current lat and long global values, check if the drone has reached waypoint, if not continue to waypoint
         while True:
             global current_lat
             global current_long
