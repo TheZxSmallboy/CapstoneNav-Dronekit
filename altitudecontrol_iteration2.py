@@ -14,7 +14,6 @@ async def main():
 
     drone = System()
     await drone.connect()
-    await drone.offboard.set_position_global(PositionGlobalYaw(44, 44, 55,0, altitude_type=PositionGlobalYaw.AltitudeType.REL_HOME))
     ## check connection before continuing
     print("Waiting for drone to connect")
     async for state in drone.core.connection_state():
@@ -36,7 +35,7 @@ async def main():
 async def altitudeCorrection(drone):
     print("Start altitude correction code")
     async for position in drone.telemetry.position():
-        await drone.telemetry.set_rate_position(0.2) # lower the update rate to 5seconds per update
+        await drone.telemetry.set_rate_position(0.5) # lower the update rate to 2 seconds per update
         # print the values in the current part of the flight
         print("Current Altitude is: "+ str(position.relative_altitude_m))
         print("Current coordinates is: "+ str(position.latitude_deg), str(position.longitude_deg))
@@ -71,7 +70,7 @@ async def run(drone, absolute_altitude):
     print("Taking off")
     await drone.action.set_takeoff_altitude(40)
     await drone.action.takeoff()
-    await asyncio.sleep(30) # pause for 30s
+    await asyncio.sleep(25) # pause for 30s
 
 
     # Read from csv file to go to a certain location
@@ -79,12 +78,12 @@ async def run(drone, absolute_altitude):
     csvreader = csv.reader(file)
     header = []
     header = next(csvreader)
-    print(header)
+    # print(header)
     rows = []
     for row in csvreader:
         rows.append(row)
     print(rows)
-    await asyncio.sleep(10)
+    await asyncio.sleep(5)
     
     for i in rows:
         print("Waypoint added", float(i[0]), float(i[1]), float(i[2]))
@@ -101,7 +100,7 @@ async def run(drone, absolute_altitude):
                 print("Reached here")
                 break
             await drone.action.goto_location(float(i[0]), float(i[1]),absolute_altitude + float(i[2]),0) # lat, lon, alt, yaw, yaw degree set to 0 as of now
-            await asyncio.sleep(20)
+            await asyncio.sleep(15)
 
 
     ## Continue connection

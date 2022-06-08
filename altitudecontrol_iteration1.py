@@ -12,7 +12,6 @@ async def main():
     ## Connect to the system
     drone = System()
     await drone.connect()
-    await drone.offboard.set_position_global(PositionGlobalYaw(44, 44, 55,0, altitude_type=PositionGlobalYaw.AltitudeType.REL_HOME))
     ## check connection before continuing
     print("Waiting for drone to connect")
     async for state in drone.core.connection_state():
