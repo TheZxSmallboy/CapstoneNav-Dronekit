@@ -33,12 +33,12 @@ async def main():
 
 # Altitude correction code
 async def altitudeCorrection(drone):
-    print("Start altitude correction code")
+
     async for position in drone.telemetry.position():
         await drone.telemetry.set_rate_position(0.5) # lower the update rate to 2 seconds per update
         # print the values in the current part of the flight
-        print("Current Altitude is: "+ str(position.relative_altitude_m))
-        print("Current coordinates is: "+ str(position.latitude_deg), str(position.longitude_deg))
+        # print("Current Altitude is: "+ str(position.relative_altitude_m))
+        # print("Current coordinates is: "+ str(position.latitude_deg), str(position.longitude_deg))
         # set global variables
         global current_lat 
         current_lat = position.latitude_deg
@@ -46,9 +46,10 @@ async def altitudeCorrection(drone):
         current_long = position.longitude_deg
         # When 60m is exceeded, start offboard mode and update the values it should be 
         if position.relative_altitude_m >= 60:
-            print("-- Setting initial setpoint")
+            print("Altitude limit exceeded, dropping altitude to 55m")
+            # print("-- Setting initial setpoint")
             await drone.offboard.set_position_global(PositionGlobalYaw(position.latitude_deg, position.longitude_deg, 55,0, altitude_type=PositionGlobalYaw.AltitudeType.REL_HOME))
-            print("-- Starting offboard")
+            # print("-- Starting offboard")
             try:
                 await drone.offboard.start()
             except OffboardError as error:
@@ -61,7 +62,7 @@ async def altitudeCorrection(drone):
 
 
 async def run(drone, absolute_altitude):
-    print("Run a custom mission based on the CSV file")
+    print("Running a custom mission based on the CSV file")
     ## Arm drone, then takeoff
     print("Arming")
     await drone.action.arm()
@@ -86,7 +87,7 @@ async def run(drone, absolute_altitude):
     await asyncio.sleep(5)
     
     for i in rows:
-        print("Waypoint added", float(i[0]), float(i[1]), float(i[2]))
+        print("Waypoint added, moving to the next waypoint", float(i[0]), float(i[1]), float(i[2]))
         await drone.action.goto_location(float(i[0]), float(i[1]),absolute_altitude + float(i[2]),0) # lat, lon, alt, yaw, yaw degree set to 0 as of now
 
         # get the current lat and long global values, check if the drone has reached waypoint, if not continue to waypoint
